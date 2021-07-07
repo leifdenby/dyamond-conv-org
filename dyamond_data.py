@@ -15,6 +15,8 @@ COUPLING_CONFIGURATION_FOR_MODEL = {"ICON-5km": "DW-CPL", "UM-5km": "DW-ATM"}
 
 DATA_ROOT_MISTRAL = Path("/pf/b/b380984/dyamond/DYAMOND_WINTER/")
 
+HOSTNAME_MISTRAL = "mistralpp.dkrz.de"
+
 DATETIME_FORMAT = "%Y%m%d%H%M%S"
 
 
@@ -65,6 +67,3 @@ def make_path(
     filename = f"{variable}_{time_resolution}_{model}_{coupling_conf}_{physics_conf}_ml_gn_{t_start_s}-{t_end_s}.nc"
 
     return data_path / filename
-
-
-make_path(model="ICON-5km")
