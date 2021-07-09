@@ -2,20 +2,26 @@ import luigi
 import luigi.contrib.ssh
 import datetime
 
-import dyamond_data
+from .. import data as dyamond_data
 
 
-class RemoteDyamondFile(luigi.Task):
+class DyamondFile(luigi.Task):
+    """
+    Represents a DYAMOND model output file either on a local or remote file
+    system
+    """
+
     date = luigi.DateSecondParameter(
         default=datetime.datetime(year=2020, month=2, day=23)
     )
     model = luigi.Parameter(default="ICON-5km")
     time_resolution = luigi.Parameter(default="15min")
     variable = luigi.Parameter(default="rlut")
-    local_data_path = luigi.Parameter(default=".")
+    data_path = luigi.Parameter(default=".")
+
+    remote_hostname = luigi.Parameter(default=None)
 
     def output(self):
-        data_root_remote = dyamond_data.DATA_ROOT_MISTRAL
         fn = dyamond_data.make_path(
             date=self.date,
             model=self.model,
@@ -23,10 +29,13 @@ class RemoteDyamondFile(luigi.Task):
             variable=self.variable,
         )
 
-        path_remote = data_root_remote / fn
-        return luigi.contrib.ssh.RemoteTarget(
-            path=path_remote, host=dyamond_data.HOSTNAME_MISTRAL
-        )
+        full_path = self.data_path / fn
+        if self.remote_hostname is not None:
+            return luigi.contrib.ssh.RemoteTarget(
+                path=full_path, host=self.remote_hostname
+            )
+        else:
+            return luigi.LocalTarget(full_path)
 
 
 class FetchDyamondFile(luigi.Task):
@@ -37,17 +46,17 @@ class FetchDyamondFile(luigi.Task):
     time_resolution = luigi.Parameter(default="15min")
     variable = luigi.Parameter(default="rlut")
     local_data_path = luigi.Parameter(default=".")
+    remote_hostname = luigi.Parameter()
 
     def requires(self):
-        return RemoteDyamondFile(
+        return DyamondFile(
             date=self.date,
             model=self.model,
             time_resolution=self.time_resolution,
             variable=self.variable,
+            remote_hostname=self.remote_hostname,
         )
 
     def run(self):
         input = self.input()
-        import ipdb
-
-        ipdb.set_trace()
+        raise NotImplementedError

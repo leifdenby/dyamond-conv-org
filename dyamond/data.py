@@ -35,6 +35,10 @@ def make_path(
     physics_conf = PHYSICS_CONFIGURATION_FOR_MODEL[model]
     coupling_conf = COUPLING_CONFIGURATION_FOR_MODEL[model]
 
+    # make sure we have a datetime.datetime rather than just a datetime.date
+    if isinstance(date, datetime.date):
+        date = datetime.datetime.combine(date, datetime.time(hour=0, minute=0))
+
     if time_resolution == "15min":
         if model == "ICON-5km":
             t_start = date
