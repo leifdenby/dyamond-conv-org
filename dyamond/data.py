@@ -7,11 +7,11 @@ Utilities for working with DYAMOND data filepaths and filenames
 from pathlib import Path
 import datetime
 
-INSTITUTE_FOR_MODEL = {"ICON-5km": "MPI-M", "UM-5km": "MetOffice"}
+INSTITUTE_FOR_MODEL = {"ICON-5km": "MPI-M", "UM-5km": "MetOffice", "GEOS-3km": "NASA" }
 
-PHYSICS_CONFIGURATION_FOR_MODEL = {"ICON-5km": "dpp0029", "UM-5km": "r1i1p1f1"}
+PHYSICS_CONFIGURATION_FOR_MODEL = {"ICON-5km": "dpp0029", "UM-5km": "r1i1p1f1", "GEOS-3km": "r1i1p1f1"}
 
-COUPLING_CONFIGURATION_FOR_MODEL = {"ICON-5km": "DW-CPL", "UM-5km": "DW-ATM"}
+COUPLING_CONFIGURATION_FOR_MODEL = {"ICON-5km": "DW-CPL", "UM-5km": "DW-ATM", "GEOS-3km": "DW-ATH"}
 
 DATA_ROOT_MISTRAL = Path("/pf/b/b380984/dyamond/DYAMOND_WINTER/")
 
@@ -47,6 +47,9 @@ def make_path(
             )
         elif model == "UM-5km":
             t_start = date + datetime.timedelta(minutes=30)
+            t_end = date + datetime.timedelta(days=1) - datetime.timedelta(minutes=30)
+        elif model == "GEOS-3km":
+            t_start = date
             t_end = date + datetime.timedelta(days=1) - datetime.timedelta(minutes=30)
         else:
             raise NotImplementedError(model)
