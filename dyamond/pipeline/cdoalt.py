@@ -46,31 +46,47 @@ class CDO:
     def _add_op(self, new_op):
         return CDO(operations=self.operations + [new_op], parameters=self.parameters)
 
-    def remap(self, grid_file, weights_file):
+    def remap(self, grid_file, weights_file, infile=None):
         """
         Remap from one grid to another
         """
         params = {k: v for (k, v) in locals().items() if k != "self"}
         new_op = dict(name="remap", params=params)
+        if infile is not None:
+            new_op["infile"] = infile
         return self._add_op(new_op=new_op)
 
-    def sellonlatbox(self, lon_west, lon_east, lat_south, lat_north):
+    def sellonlatbox(self, lon_west, lon_east, lat_south, lat_north, infile=None):
         """
         Select data within a lat/lon bounding box
         """
         params = {k: v for (k, v) in locals().items() if k != "self"}
         new_op = dict(name="sellonlatbox", params=params)
+        new_op = dict(name="remap", params=params)
+        if infile is not None:
+            new_op["infile"] = infile
         return self._add_op(new_op=new_op)
 
-    def selname(self, variable):
+    def selname(self, variable, infile=None):
         """
         Select variable(s), `variable` may be a list variable names
         """
         params = {k: v for (k, v) in locals().items() if k != "self"}
         new_op = dict(name="selname", params=params)
+        if infile is not None:
+            new_op["infile"] = infile
         return self._add_op(new_op=new_op)
 
-    def _build_cmd(self, in_filename, out_filename):
+    def mergetime(self, infiles):
+        """
+        Merge multiple files together
+        """
+        params = {k: v for (k, v) in locals().items() if k != "self"}
+        new_op = dict(name="mergetime", params=params)
+        assert len(infiles) > 1
+        return self._add_op(new_op=new_op)
+
+    def _build_cmd(self, out_filename):
         params_cdo = []
         for param, value in self.parameters.items():
             if param == "time_axis":
@@ -92,6 +108,7 @@ class CDO:
         for op in self.operations[::-1]:
             op_name = op["name"]
             op_params = op["params"]
+
             if op_name == "selname":
                 if type(op_params["variable"]) != list:
                     arglist = [op_params["variable"]]
@@ -104,21 +121,30 @@ class CDO:
                 ]
             elif op_name == "remap":
                 arglist = [str(op_params[v]) for v in ["grid_file", "weights_file"]]
+            elif op_name == "mergetime":
+                arglist = [" ".join(op_params["infiles"])]
             else:
                 raise NotImplementedError(op_name)
 
-            ops_cdo.append(f"-{op_name},{','.join(arglist)}")
+            op_str = f"-{op_name},{','.join(arglist)}"
+            if op_params.get("infile") is not None:
+                infile = op_params["infile"]
+                op_str += f" {infile}"
+            if op_name == "mergetime":
+                ### XXX: quick hack
+                op_str = op_str.replace(",", " ")
+            ops_cdo.append(op_str)
 
         cdo_cmd_parts = params_cdo + ops_cdo
 
-        return f"{self.cdo_path} {' '.join(cdo_cmd_parts)} {in_filename} {out_filename}"
+        return f"{self.cdo_path} {' '.join(cdo_cmd_parts)} {out_filename}"
 
     def __repr__(self):
         ops_s = " -> ".join([op["name"] for op in self.operations])
         return f"cdo {ops_s}"
 
-    def execute(self, in_filename, out_filename):
-        cdo_cmd = self._build_cmd(in_filename=in_filename, out_filename=out_filename)
+    def execute(self, out_filename):
+        cdo_cmd = self._build_cmd(out_filename=out_filename)
 
         _call_cdo(cdo_cmd)
 
