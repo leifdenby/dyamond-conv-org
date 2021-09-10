@@ -62,7 +62,6 @@ class CDO:
         """
         params = {k: v for (k, v) in locals().items() if k != "self"}
         new_op = dict(name="sellonlatbox", params=params)
-        new_op = dict(name="remap", params=params)
         if infile is not None:
             new_op["infile"] = infile
         return self._add_op(new_op=new_op)

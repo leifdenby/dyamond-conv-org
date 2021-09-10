@@ -1,6 +1,7 @@
 import luigi
 import luigi.contrib.ssh
 import datetime
+from pathlib import Path
 
 from .. import data as dyamond_data
 
@@ -20,6 +21,10 @@ class DyamondFile(luigi.Task):
     data_path = luigi.Parameter(default=".")
 
     remote_hostname = luigi.Parameter(default=None)
+
+    def run(self):
+        if not Path(self.output().fn).exists():
+            raise Exception(f"Couldn't find source file: `{self.output().fn}`")
 
     def output(self):
         fn = dyamond_data.make_path(

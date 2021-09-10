@@ -20,6 +20,7 @@ class ProcessModelFile(luigi.Task):
         # list of models that need regridding
         model_res = {
             "ICON-5km": 0.1,
+            "ICON-SAP-5km": 0.1,
             "UM-5km": 0.1,
             "GEOS-3km": 0.1,
         }
@@ -59,13 +60,25 @@ class ProcessAllMerged(luigi.WrapperTask):
         # models = ["UM-5km", "ICON-5km", "GEOS-3km"]
         models = [
             "UM-5km",
-            "ICON-5km",
+            # "ICON-5km",
+            "ICON-SAP-5km",
+            "GEOS-3km",
+        ]
+
+        variables = [
+            "rlut",
+            "vas", # surface_northward_wind
+            "uas", # surface_eastward_wind
+            "hfls", # surface_upward_latent_heat_flux
+            "hfss", # surface_upward_sensible_heat_flux
+            "clwvi", # atmosphere_mass_content_of_cloud_condensed_water
         ]
 
         tasks = []
 
-        for model in models:
-            task = ProcessModelFile(model=model)
-            tasks.append(task)
+        for variable in variables:
+            for model in models:
+                task = ProcessModelFile(model=model, variable=variable)
+                tasks.append(task)
 
         return tasks

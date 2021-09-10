@@ -8,20 +8,27 @@ from .cdoalt import cdo
 
 
 GRID_FILES_PATH = Path("/work/ka1081/DYAMOND/PostProc/GridsAndWeights")
+GRID_FILES_PATH_EXTRA = Path("/mnt/lustre02/work/bb1153/DYAMOND_USER_DATA/ANALYSIS/b380984/GridsAndWeights")
 
 MODEL_GRIDFILE_IDS = {
     "ICON-5km": "ICON_R2B09_2",
+    "ICON-SAP-5km": "ICON_R2B09_2",
     "UM-5km": "UM-5km",
-    "GOES-3km": "GEOS-3.25km"
+    "GEOS-3km": "GEOS-3.25km"
 }
 
 
-def _make_model_gridfile_path(resolution, model):
+def _make_model_gridweights_filepath(resolution, model):
     grid_id = MODEL_GRIDFILE_IDS.get(model)
     if grid_id is None:
-        raise NotADirectoryError(model)
+        raise NotImplementedError(model)
+    if model == "GEOS-3km":
+        grid_files_path = GRID_FILES_PATH_EXTRA
+    else:
+        grid_files_path = GRID_FILES_PATH
+
     filename = f"{grid_id}_{resolution:.02f}_grid_wghts.nc"
-    return GRID_FILES_PATH / filename
+    return grid_files_path / filename
 
 
 def _make_latlon_gridfile_path(resolution):
@@ -71,7 +78,7 @@ class CropDyamondFile(luigi.Task):
             grid_filename = _make_latlon_gridfile_path(
                 resolution=self.dst_grid_latlon_resolution
             )
-            weights_filename = _make_model_gridfile_path(
+            weights_filename = _make_model_gridweights_filepath(
                 resolution=self.dst_grid_latlon_resolution, model=self.model
             )
             if self.model not in MODEL_GRIDFILE_IDS:
@@ -91,15 +98,13 @@ class CropDyamondFile(luigi.Task):
 
         dset_id = f"{res_id}_{bbox_id}"
 
-        import ipdb
-        with ipdb.launch_ipdb_on_exception():
-            f_path = dyamond_data.make_path(
-                date=self.date,
-                model=self.model,
-                time_resolution=self.time_resolution,
-                variable=self.variable,
-                data_root=Path(self.dst_data_path_root) / dset_id,
-            )
+        f_path = dyamond_data.make_path(
+            date=self.date,
+            model=self.model,
+            time_resolution=self.time_resolution,
+            variable=self.variable,
+            data_root=Path(self.dst_data_path_root) / dset_id,
+        )
 
         return luigi.LocalTarget(f_path)
 
